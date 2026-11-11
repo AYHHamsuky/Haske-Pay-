@@ -1,0 +1,54 @@
+# Production-shaped stack for a single VPS. Put Caddy or a host nginx with TLS in front of port 8080.
+x-app: &app
+  build: .
+  image: haske-pay:latest
+  env_file: .env
+  restart: unless-stopped
+  depends_on: [mysql, redis]
+  volumes:
+    - storage:/var/www/html/storage
+
+services:
+  web:
+    <<: *app
+    ports: ["127.0.0.1:8080:80"]
+
+  queue:
+    <<: *app
+    # requery first: a stuck purchase matters more than a late SMS
+    command: php artisan queue:work redis --queue=requery,default,sms --tries=3 --max-time=3600
+
+  scheduler:
+    <<: *app
+    command: php artisan schedule:work
+
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes: [mysql:/var/lib/mysql]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes: [redis:/data]
+
+  backup:
+    image: mysql:8.4
+    restart: unless-stopped
+    depends_on: [mysql]
+    environment:
+      MYSQL_PWD: ${DB_ROOT_PASSWORD}
+    volumes: [./backups:/backups]
+    # Daily dump, keeps 14 days. Copy ./backups off the server too (e.g. rclone to object storage).
+    entrypoint: ["/bin/sh", "-c", "while true; do mysqldump -h mysql -u root --single-transaction ${DB_DATABASE} | gzip > /backups/haske-$$(date +%F).sql.gz; find /backups -name '*.sql.gz' -mtime +14 -delete; sleep 86400; done"]
+
+volumes:
+  storage:
+  mysql:
+  redis:

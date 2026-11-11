@@ -1,0 +1,923 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Haske Pay</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Schibsted+Grotesk:wght@400;500;600;700&family=Martian+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a working phone on the left, the system behind it on the right (stacks on phones). Accent = Kano indigo; bold moment = the prepaid-meter LCD token. */
+:root{
+  --bg:#ECEEF4; --surface:#FFFFFF; --surface-2:#F5F6FA; --ink:#14183A; --muted:#5A6082; --line:#DCDFEA;
+  --accent:#2E3D9F; --accent-ink:#FFFFFF; --accent-soft:#E2E6F8;
+  --lcd:#C5CFAE; --lcd-ink:#1C2412; --lcd-dim:#4A5636;
+  --good:#1D7A4C; --good-soft:#DDF1E5; --warn:#9A6400; --warn-soft:#FBEFD5; --bad:#B3261E; --bad-soft:#F9DEDB;
+  --scrim:rgba(20,24,58,.42); --shadow:0 30px 60px -30px rgba(20,24,58,.35);
+  --f-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-mono:'Martian Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D0F1E; --surface:#161A2F; --surface-2:#1C2038; --ink:#E9EBF7; --muted:#9CA1C2; --line:#2A2F4D;
+  --accent:#93A1FF; --accent-ink:#0D0F1E; --accent-soft:#252C5E;
+  --lcd:#9DAA80; --lcd-ink:#10160A; --lcd-dim:#344027;
+  --good:#62D39C; --good-soft:#163A2A; --warn:#F1B54E; --warn-soft:#3A2D12; --bad:#FF8E84; --bad-soft:#40201E;
+  --scrim:rgba(0,0,0,.55); --shadow:0 30px 60px -30px rgba(0,0,0,.7); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D0F1E; --surface:#161A2F; --surface-2:#1C2038; --ink:#E9EBF7; --muted:#9CA1C2; --line:#2A2F4D;
+  --accent:#93A1FF; --accent-ink:#0D0F1E; --accent-soft:#252C5E;
+  --lcd:#9DAA80; --lcd-ink:#10160A; --lcd-dim:#344027;
+  --good:#62D39C; --good-soft:#163A2A; --warn:#F1B54E; --warn-soft:#3A2D12; --bad:#FF8E84; --bad-soft:#40201E;
+  --scrim:rgba(0,0,0,.55); --shadow:0 30px 60px -30px rgba(0,0,0,.7); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+.page{max-width:1120px;margin:0 auto;display:grid;gap:22px}
+.intro{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px}
+.intro h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,4vw,40px);letter-spacing:-.02em;margin:0;line-height:1;display:flex;align-items:center;gap:12px}
+.intro p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.mark{width:36px;height:36px;border-radius:10px;background:var(--accent);display:grid;place-items:center;flex:none}
+.mark svg{width:20px;height:20px}
+.demo-tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);padding:6px 10px;border-radius:999px;font-weight:600}
+
+.stage{display:grid;gap:24px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media (min-width:920px){.stage{grid-template-columns:400px minmax(0,1fr)}}
+
+/* Phone */
+.phone{width:100%;max-width:400px;margin:0 auto;height:780px;border-radius:34px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);overflow:hidden;position:relative;display:flex;flex-direction:column}
+@media (max-width:480px){.phone{border-radius:24px;height:720px}}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px;gap:10px}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:-.01em}
+.brand .mark{width:28px;height:28px;border-radius:8px}.brand .mark svg{width:16px;height:16px}
+.top-right{display:flex;gap:8px;align-items:center}
+.badge{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:6px;background:var(--accent-soft);color:var(--accent)}
+.langbtn{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:700;letter-spacing:.04em}
+#view{flex:1;overflow-y:auto;padding:4px 18px 20px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);background:var(--surface);padding:6px 6px 10px}
+.tab{background:none;border:0;display:grid;justify-items:center;gap:3px;padding:6px 0;font-size:12px;font-weight:600;color:var(--muted);border-radius:10px}
+.tab svg{width:22px;height:22px}
+.tab[aria-current="page"]{color:var(--accent)}
+
+/* Home */
+.balance{background:var(--accent);color:var(--accent-ink);border-radius:20px;padding:18px;display:grid;gap:14px}
+.balance .lbl{font-size:13px;opacity:.85;font-weight:500}
+.balance .amt{font-family:var(--f-display);font-weight:700;font-size:36px;letter-spacing:-.02em;line-height:1.05}
+.balance .amt small{font-size:20px;opacity:.75}
+.va{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12.5px;border-top:1px solid color-mix(in srgb,var(--accent-ink) 25%,transparent);padding-top:12px}
+.va b{font-family:var(--f-mono);font-weight:500;letter-spacing:.02em}
+.btn-on-accent{background:var(--accent-ink);color:var(--accent);border:0;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px;white-space:nowrap}
+.mini-link{background:none;border:0;color:inherit;text-decoration:underline;font-size:12.5px;padding:0;opacity:.9}
+.agent-strip{display:flex;justify-content:space-between;gap:10px;align-items:center;background:var(--good-soft);color:var(--good);border-radius:14px;padding:12px 14px;font-size:13px}
+.agent-strip b{font-family:var(--f-display);font-size:18px}
+.services{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.svc{border:1px solid var(--line);background:var(--surface-2);border-radius:16px;padding:12px 4px 10px;display:grid;justify-items:center;gap:6px;font-size:12.5px;font-weight:600;position:relative}
+.svc svg{width:24px;height:24px;color:var(--accent)}
+.svc[disabled]{opacity:.55;cursor:not-allowed}
+.svc .soon{position:absolute;top:-7px;right:-4px;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 5px;color:var(--muted)}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline}
+.sec-h h3{margin:0;font-size:15px}
+.linkbtn{background:none;border:0;color:var(--accent);font-weight:600;font-size:13px;padding:0}
+
+/* Lists */
+.list{display:grid;gap:2px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 6px;border-radius:12px;background:none;border:0;text-align:left;width:100%}
+.row:hover{background:var(--surface-2)}
+.ico{width:38px;height:38px;border-radius:11px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:10.5px;font-weight:700;letter-spacing:.02em;flex:none}
+.ico.fund{background:var(--good-soft);color:var(--good)}
+.row-main{flex:1;min-width:0}
+.row-main b{display:block;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-main span{font-size:12px;color:var(--muted)}
+.row-end{text-align:right;display:grid;gap:3px;justify-items:end}
+.row-end b{font-size:14px;font-weight:600}
+.chip{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.chip.success{background:var(--good-soft);color:var(--good)}
+.chip.pending{background:var(--warn-soft);color:var(--warn)}
+.chip.refunded,.chip.failed{background:var(--bad-soft);color:var(--bad)}
+.empty{color:var(--muted);text-align:center;padding:28px 10px;font-size:14px}
+
+/* Forms */
+.vhead{display:flex;align-items:center;gap:10px}
+.vhead h2{margin:0;font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:-.01em}
+.iconbtn{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:18px;height:18px}
+.field{display:grid;gap:6px}
+.field > span{font-size:12.5px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+.input,select.input{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 14px;font-size:16px;min-width:0}
+.input.big{font-family:var(--f-mono);font-size:18px;letter-spacing:.06em}
+.input[aria-invalid="true"]{border-color:var(--bad)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{border:0;background:none;border-radius:9px;padding:8px;font-weight:600;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+.pill[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.err{font-size:13px;color:var(--bad);margin:0;font-weight:500}
+.err:empty,.hint:empty{display:none}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:14px;padding:14px;font-weight:700;font-size:15px;width:100%}
+.btn.ghost{background:var(--surface-2);color:var(--ink);border:1px solid var(--line)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:10px 12px;font-size:14px;border-radius:12px}
+.cust{border:1px solid var(--good);background:var(--good-soft);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.cust b{display:block;font-size:15px}
+.cust span{font-size:12.5px;color:var(--muted)}
+.cust .ok{color:var(--good);font-weight:700;font-size:12px;white-space:nowrap}
+.summary{border:1px dashed var(--line);border-radius:14px;padding:10px 14px;display:grid;gap:4px;font-size:13.5px}
+.summary div{display:flex;justify-content:space-between;gap:8px}
+.summary .tot{border-top:1px solid var(--line);padding-top:6px;margin-top:2px;font-weight:700}
+.summary .muted{color:var(--muted)}
+.plans{display:grid;gap:6px}
+.plan{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;text-align:left}
+.plan b{font-size:14.5px}.plan span{font-size:12px;color:var(--muted)}
+.plan[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+
+/* Receipt + LCD */
+.hero{text-align:center;display:grid;gap:6px;justify-items:center;padding:6px 0}
+.hero .amt{font-family:var(--f-display);font-size:34px;font-weight:700;letter-spacing:-.02em}
+.hero .sub{color:var(--muted);font-size:13.5px}
+.lcd{background:var(--lcd);color:var(--lcd-ink);border-radius:14px;padding:12px 14px 12px;box-shadow:inset 0 2px 0 rgba(0,0,0,.08),inset 0 0 0 1px rgba(0,0,0,.12);font-family:var(--f-mono)}
+.lcd-top,.lcd-bot{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--lcd-dim);font-weight:600}
+.lcd-digits{font-size:clamp(17px,5.2vw,21px);font-weight:600;letter-spacing:.08em;text-align:center;padding:10px 0 8px;word-spacing:.15em;user-select:all}
+.lcd-bot b{color:var(--lcd-ink);letter-spacing:.04em}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.banner{border-radius:14px;padding:12px 14px;font-size:13.5px;display:grid;gap:8px}
+.banner.pending{background:var(--warn-soft);color:var(--warn)}
+.banner.refunded{background:var(--bad-soft);color:var(--bad)}
+.banner.info{background:var(--accent-soft);color:var(--accent)}
+.dl{display:grid;gap:0;border-top:1px solid var(--line)}
+.dl div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.dl dt{color:var(--muted)}.dl dd{margin:0;text-align:right;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.mono{font-family:var(--f-mono);font-size:12.5px}
+
+/* Settings */
+.set{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.set b{display:block;font-size:14.5px}.set span{font-size:12.5px;color:var(--muted)}
+.switch{width:46px;height:28px;border-radius:999px;border:0;background:var(--line);position:relative;flex:none}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--surface);transition:transform .18s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.switch[aria-checked="true"]{background:var(--accent)}
+.switch[aria-checked="true"]::after{transform:translateX(18px)}
+.seg.compact{width:120px}
+
+/* Sheets */
+.layer{position:absolute;inset:0;z-index:20}
+.scrim{position:absolute;inset:0;background:var(--scrim);border:0;width:100%;cursor:default}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:22px 22px 0 0;padding:20px 18px 22px;display:grid;gap:14px;max-height:88%;overflow-y:auto;animation:up .22s ease-out}
+.sheet h3{margin:0;font-family:var(--f-display);font-size:20px}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+.dots{display:flex;gap:14px;justify-content:center;padding:6px 0}
+.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent)}
+.dots i.on{background:var(--accent)}
+.dots.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.key{border:0;background:var(--surface-2);border-radius:14px;padding:14px 0;font-size:22px;font-weight:600;font-family:var(--f-display)}
+.key:active{background:var(--accent-soft)}
+.key.blank{visibility:hidden}
+.proc{position:absolute;inset:0;background:var(--surface);display:grid;place-content:center;justify-items:center;gap:14px;text-align:center;padding:24px;z-index:30}
+.proc h3{margin:0;font-family:var(--f-display);font-size:21px}
+.proc p{margin:0;color:var(--muted);max-width:28ch}
+.spin{width:54px;height:54px;border-radius:50%;border:4px solid var(--accent-soft);border-top-color:var(--accent);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steps{list-style:none;padding:0;margin:4px 0 0;display:grid;gap:6px;font-size:13px;text-align:left}
+.steps li{display:flex;gap:8px;align-items:center;color:var(--muted)}
+.steps li.done{color:var(--good)}.steps li.now{color:var(--ink);font-weight:600}.steps li.warn{color:var(--warn);font-weight:600}
+.steps li::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.toast{position:absolute;left:16px;right:16px;bottom:76px;background:var(--ink);color:var(--surface);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:500;z-index:40;box-shadow:var(--shadow)}
+
+/* Console */
+.console{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;display:grid;gap:18px;min-width:0}
+.console h2{margin:0;font-family:var(--f-display);font-size:22px;letter-spacing:-.01em}
+.console > header p{margin:4px 0 0;color:var(--muted);font-size:13.5px;max-width:62ch}
+.ctl{display:grid;gap:8px}
+.ctl > span{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ctl .pills .pill{font-size:12.5px}
+.ctl p{margin:0;font-size:12.5px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:2px}
+.stat span{font-size:12px;color:var(--muted)}
+.stat b{font-family:var(--f-display);font-size:21px;font-weight:700;letter-spacing:-.01em}
+.stat em{font-style:normal;font-size:12px;font-weight:600}
+.stat em.ok{color:var(--good)}.stat em.bad{color:var(--bad)}
+.log{list-style:none;margin:0;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;max-height:380px;overflow:auto;display:grid;gap:5px;font-family:var(--f-mono);font-size:11.5px;line-height:1.5}
+.log li{display:grid;grid-template-columns:58px 72px minmax(0,1fr);gap:8px;align-items:baseline}
+.log time{color:var(--muted)}
+.log .tag{font-weight:600;color:var(--accent)}
+.log li.warn .tag,.log li.warn .msg{color:var(--warn)}
+.log li.bad .tag,.log li.bad .msg{color:var(--bad)}
+.log li.ok .tag{color:var(--good)}
+.log .msg{overflow-wrap:anywhere}
+@media (max-width:480px){.log li{grid-template-columns:52px minmax(0,1fr)}.log time{grid-row:span 2}}
+.ctl-row{display:flex;flex-wrap:wrap;gap:8px}
+.ghost-sm{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-iteration-count:1!important;transition:none!important}}
+</style>
+
+<div class="page">
+  <header class="intro">
+    <div>
+      <h1><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" fill="var(--accent-ink)"/></svg></span>Haske Pay</h1>
+      <p>Electricity tokens, airtime and data for Arewa, in English and Hausa. Use the app on the left; watch the ledger, requeries and refunds happen on the right.</p>
+    </div>
+    <span class="demo-tag">Simulated · no real money</span>
+  </header>
+
+  <div class="stage">
+    <div class="phone" id="phone">
+      <div class="topbar">
+        <div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" fill="var(--accent-ink)"/></svg></span>Haske</div>
+        <div class="top-right"><span class="badge" id="agentBadge" hidden>Agent</span><button class="langbtn" data-act="lang" id="langBtn" aria-label="Switch language">HA</button></div>
+      </div>
+      <main id="view" aria-live="polite"></main>
+      <nav class="tabs" id="tabs" aria-label="Main"></nav>
+      <div id="layer"></div>
+      <div id="toast" class="toast" role="status" hidden></div>
+    </div>
+
+    <aside class="console" aria-label="System behind the app">
+      <header>
+        <h2>Behind the screen</h2>
+        <p>Every naira is a ledger entry. Failed tokens refund themselves, pending ones are requeried, and a dead provider fails over to the backup route.</p>
+      </header>
+      <div class="ctl">
+        <span>Next purchase outcome</span>
+        <div class="pills" id="outcomes" role="group" aria-label="Next purchase outcome"></div>
+        <p id="outcomeHelp"></p>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="ctl">
+        <span>Tests</span>
+        <div class="ctl-row">
+          <button class="ghost-sm" data-act="replay">Replay last bank webhook</button>
+          <button class="ghost-sm" data-act="double">Double-tap a purchase</button>
+          <button class="ghost-sm" data-act="reset">Reset demo</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <span>Live system log</span>
+        <ol class="log" id="log" reversed></ol>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const STORE = 'haske-demo-v2';
+const ICON = {
+  bolt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/></svg>',
+  phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3" stroke-linecap="round"/></svg>',
+  wifi:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.6 16a5 5 0 0 1 6.8 0"/><circle cx="12" cy="19.2" r="1.1" fill="currentColor"/></svg>',
+  tv:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="2.5" y="5.5" width="19" height="13" rx="2"/><path d="M8 21.5h8M8 2.5l4 3 4-3"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1h-5v-6h-5v6h-5a1 1 0 0 1-1-1v-9.5Z"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 6.5h12M8 12h12M8 17.5h12"/><circle cx="4" cy="6.5" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="17.5" r="1" fill="currentColor"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.4-6 8-6s6.8 2 8 6" stroke-linecap="round"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg>'
+};
+
+const DISCOS = [
+  {code:'kaduna',name:'Kaduna Electric',short:'KAEDCO',rate:1.5},
+  {code:'kano',name:'Kano Electric',short:'KEDCO',rate:1.0,est:true},
+  {code:'jos',name:'Jos Electric',short:'JED',rate:0.9},
+  {code:'abuja',name:'Abuja Electric',short:'AEDC',rate:1.2},
+  {code:'yola',name:'Yola Electric',short:'YEDC',rate:1.0,est:true},
+  {code:'ikeja',name:'Ikeja Electric',short:'IKEDC',rate:1.5},
+  {code:'eko',name:'Eko Electric',short:'EKEDC',rate:1.0},
+  {code:'ibadan',name:'Ibadan Electric',short:'IBEDC',rate:1.1},
+  {code:'enugu',name:'Enugu Electric',short:'EEDC',rate:1.4},
+  {code:'benin',name:'Benin Electric',short:'BEDC',rate:1.5},
+  {code:'ph',name:'Port Harcourt Electric',short:'PHED',rate:2.0}
+];
+const disco = c => DISCOS.find(d => d.code === c) || DISCOS[0];
+const TARIFF = {A:209.5, B:63.2, C:50.1}; // demo tariffs, ₦/kWh incl. nothing; VAT 7.5% added on top
+const NETS = {
+  mtn:{name:'MTN',rate:3.0,pre:['0803','0806','0703','0706','0813','0816','0810','0814','0903','0906','0913','0916','0704']},
+  airtel:{name:'Airtel',rate:3.4,pre:['0802','0808','0708','0812','0701','0902','0901','0904','0907','0912']},
+  glo:{name:'Glo',rate:4.0,pre:['0805','0807','0705','0815','0811','0905','0915']},
+  nine:{name:'9mobile',rate:4.0,pre:['0809','0818','0817','0909','0908']}
+};
+const PLANS = {
+  mtn:[['1GB',1,500],['2GB',7,1000],['3.5GB',30,2500],['7GB',30,3500],['20GB',30,7500]],
+  airtel:[['1GB',1,500],['2GB',7,1000],['4GB',30,2500],['10GB',30,4000],['18GB',30,6000]],
+  glo:[['1GB',1,350],['2.6GB',30,1000],['5.8GB',30,2000],['10GB',30,3000],['18GB',30,5000]],
+  nine:[['1GB',1,400],['2.5GB',30,1000],['5GB',30,2500],['11GB',30,4000]]
+};
+const NAMES = ['Aisha Bello','Musa Ibrahim','Fatima Sani','Usman Garba','Hauwa Yusuf','Abdullahi Aliyu','Zainab Lawal','Yakubu Danjuma'];
+const AREAS = ['Barnawa','Ungwan Rimi','Malali','Tudun Wada','Sabon Tasha','Kawo','Narayi','Kabala Costain'];
+const LIMIT = {customer:200000, agent:2000000};
+
+const STR = {
+  en:{home:'Home',history:'History',profile:'Profile',hello:'Sannu',balance:'Wallet balance',addMoney:'Add money',
+    elec:'Electricity',airtime:'Airtime',data:'Data',tv:'TV',soon:'Soon',recent:'Recent activity',seeAll:'See all',
+    disco:'Distribution company',meterType:'Meter type',prepaid:'Prepaid',postpaid:'Postpaid',meterNo:'Meter number',
+    verify:'Verify meter',verifying:'Checking meter…',change:'Change',verified:'Verified',amount:'Amount',cont:'Continue',
+    fee:'Service fee',total:'You pay',units:'Estimated units',tokenValue:'Token value',pin:'Enter your PIN',
+    success:'Successful',pending:'Pending',failed:'Failed',refunded:'Refunded',token:'Token',copyToken:'Copy token',
+    sendSms:'Send by SMS',phone:'Phone number',network:'Network',buy:'Buy',plan:'Choose a plan',saved:'Saved meters',
+    agentMode:'Agent mode',agentSub:'No service fee for your customers; you earn commission on each sale.',language:'Language',
+    reset:'Reset demo',done:'Done',checkNow:'Check now',all:'All',funding:'Wallet top-ups',bills:'Bills',
+    todayComm:"Today's commission",feeWaived:'Fee waived for your customers',days:'days',day:'day',
+    payTo:'Pay',details:'Details',ref:'Reference',customer:'Customer',route:'Route',when:'Date',attempts:'Status checks',
+    pendingMsg:'We are confirming with the provider. Your money is safe: if this fails, it returns to your wallet automatically.',
+    refundMsg:'returned to your wallet.',postpaidMsg:'Payment applied to the customer account. No token is needed for postpaid meters.',
+    vaTitle:'Your account number',vaSub:'Transfer from any bank app. Money lands in your wallet in seconds.',
+    simulate:'Simulate transfer received',transferAmt:'Amount to transfer',demoPin:'Demo PIN: 1234',limit:'Daily limit',
+    noTx:'No transactions yet. Buy a token to see it here.',dailyLeft:'left today',airtimeFor:'Airtime',dataFor:'Data',
+    processing:'Processing',debited:'Wallet debited',sent:'Sent to provider',waiting:'Waiting for token'},
+  ha:{home:'Gida',history:'Tarihi',profile:'Bayanai',hello:'Sannu',balance:'Kuɗin walat',addMoney:'Saka kuɗi',
+    elec:'Wutar lantarki',airtime:'Katin waya',data:'Data',tv:'Talabijin',soon:'Nan gaba',recent:'Ayyukan baya-bayan nan',seeAll:'Duba duka',
+    disco:'Kamfanin wuta',meterType:'Irin mita',prepaid:'Kafin amfani',postpaid:'Bayan amfani',meterNo:'Lambar mita',
+    verify:'Tabbatar da mita',verifying:'Ana duba mita…',change:'Canza',verified:'An tabbatar',amount:'Adadin kuɗi',cont:'Ci gaba',
+    fee:'Kuɗin sabis',total:'Jimilla',units:'Kimanin unit',tokenValue:'Darajar token',pin:'Shigar da PIN ɗinka',
+    success:'An yi nasara',pending:'Ana jira',failed:'Bai yi nasara ba',refunded:'An mayar da kuɗi',token:'Token',copyToken:'Kwafi token',
+    sendSms:'Aika ta SMS',phone:'Lambar waya',network:'Kamfanin sadarwa',buy:'Saya',plan:'Zaɓi tsari',saved:'Mitocin da aka ajiye',
+    agentMode:'Yanayin wakili',agentSub:'Abokan cinikinka ba sa biyan kuɗin sabis; kai kana samun ladan kowane siyarwa.',language:'Harshe',
+    reset:'Sake farawa',done:'Shi ke nan',checkNow:'Duba yanzu',all:'Duka',funding:'Saka kuɗi',bills:'Biyan kuɗi',
+    todayComm:'Ladan yau',feeWaived:'Babu kuɗin sabis ga abokan ciniki',days:'kwanaki',day:'rana',
+    payTo:'Biya',details:'Cikakkun bayanai',ref:'Lambar shaida',customer:'Abokin ciniki',route:'Hanya',when:'Lokaci',attempts:'Bincike',
+    pendingMsg:'Muna tabbatarwa da kamfanin. Kuɗinka yana lafiya: idan bai yi nasara ba, zai dawo walat ɗinka kai tsaye.',
+    refundMsg:'an mayar walat ɗinka.',postpaidMsg:'An biya asusun abokin ciniki. Mitar bayan amfani ba ta buƙatar token.',
+    vaTitle:'Lambar asusunka',vaSub:'Tura daga kowace manhajar banki. Kuɗin zai shiga walat ɗinka nan take.',
+    simulate:'Kwaikwayi karɓar kuɗi',transferAmt:'Adadin da za a tura',demoPin:'PIN na gwaji: 1234',limit:'Iyakar yau',
+    noTx:'Babu wani aiki tukuna. Sayi token don ganin sa a nan.',dailyLeft:'ya rage yau',airtimeFor:'Katin waya',dataFor:'Data',
+    processing:'Ana aiki',debited:'An cire daga walat',sent:'An aika wa kamfani',waiting:'Ana jiran token'}
+};
+const t = k => (STR[S.lang] && STR[S.lang][k]) || STR.en[k] || k;
+
+/* ---------- state ---------- */
+let S;
+const ui = {view:'home', receipt:null, filter:'all', outcome:'auto', inflight:false, layer:null,
+  pin:'', pinTries:0, lockUntil:0, pinCb:null, pinLabel:'',
+  elec:{disco:'kaduna', type:'prepaid', meter:'', customer:null, verifying:false, amount:'', err:'', meterErr:''},
+  air:{phone:'', net:null, manualNet:false, amount:'', err:''},
+  dat:{phone:'', net:null, manualNet:false, plan:null, err:''},
+  fund:{amount:'5000'}, logs:[], lastWebhook:null, procTx:null, procStep:0};
+
+const naira = n => '₦' + Number(n).toLocaleString('en-NG',{minimumFractionDigits:Number.isInteger(n)?0:2, maximumFractionDigits:2});
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rid = () => Math.random().toString(36).slice(2,8).toUpperCase() + Date.now().toString(36).slice(-4).toUpperCase();
+const nextId = () => 'HP-' + (++S.seq);
+const hash = s => [...s].reduce((h,c) => (h*31 + c.charCodeAt(0)) >>> 0, 7);
+const balance = () => S.ledger.reduce((s,e) => s + (e.type === 'credit' ? e.amount : -e.amount), 0);
+const round2 = n => Math.round(n*100)/100;
+const isToday = ts => new Date(ts).toDateString() === new Date().toDateString();
+function when(ts){
+  const d = new Date(ts), now = new Date();
+  const hm = d.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'});
+  if (d.toDateString() === now.toDateString()) return (S.lang==='ha'?'Yau ':'Today ') + hm;
+  const y = new Date(now); y.setDate(now.getDate()-1);
+  if (d.toDateString() === y.toDateString()) return (S.lang==='ha'?'Jiya ':'Yesterday ') + hm;
+  return d.toLocaleDateString('en-NG',{day:'numeric',month:'short'}) + ' ' + hm;
+}
+const tokenGroups = tok => tok.match(/.{1,4}/g).join(' ');
+const newToken = () => Array.from({length:20}, () => Math.floor(Math.random()*10)).join('');
+
+function credit(amount, ref, note){ S.ledger.push({type:'credit', amount:round2(amount), ref, note, at:Date.now()}); }
+function debit(amount, ref, note){ S.ledger.push({type:'debit', amount:round2(amount), ref, note, at:Date.now()}); }
+
+function seed(){
+  const now = Date.now(), H = 3600000;
+  const s = {v:2, lang:'en', agent:false, ledger:[], tx:[], seq:1003, webhooks:[],
+    meters:[{disco:'kaduna',type:'prepaid',meter:'04223456781',name:'Aisha Bello'}],
+    va:{bank:'Wema Bank', number:'7812 345 690', name:'Haske / Demo account'}};
+  s.tx = [
+    {id:'HP-1003',kind:'airtime',title:'MTN',target:'08031234567',amount:1000,fee:0,rate:3,agentRate:0,status:'refunded',provider:'vtpass',at:now-5*H,attempts:1},
+    {id:'HP-1002',kind:'electricity',title:'Kaduna Electric',short:'KAEDCO',disco:'kaduna',meterType:'prepaid',target:'04223456781',customer:'Aisha Bello',band:'A',
+      amount:10000,fee:100,rate:1.5,agentRate:0,status:'success',provider:'vtpass',token:'48107733920156284419',units:44.4,at:now-26*H,attempts:0},
+    {id:'HP-1001',kind:'funding',title:'Bank transfer',target:'Wema Bank',amount:30000,fee:0,status:'success',provider:'paystack',at:now-50*H}
+  ];
+  s.ledger = [
+    {type:'credit',amount:30000,ref:'HP-1001',note:'Bank transfer',at:now-50*H},
+    {type:'debit',amount:10100,ref:'HP-1002',note:'Kaduna Electric token',at:now-26*H},
+    {type:'debit',amount:1000,ref:'HP-1003',note:'MTN airtime',at:now-5*H},
+    {type:'credit',amount:1000,ref:'HP-1003-R',note:'Refund',at:now-5*H+60000}
+  ];
+  return s;
+}
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); } catch(e) {} }
+function load(){
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) { const p = JSON.parse(raw); if (p && p.v === 2 && Array.isArray(p.ledger) && Array.isArray(p.tx)) return p; }
+  } catch(e) {}
+  return seed();
+}
+
+/* ---------- log ---------- */
+function log(tag, msg, level=''){
+  ui.logs.unshift({at:Date.now(), tag, msg, level});
+  if (ui.logs.length > 120) ui.logs.length = 120;
+  renderLog(); renderStats();
+}
+function renderLog(){
+  $('#log').innerHTML = ui.logs.map(l => `<li class="${l.level}"><time class="num">${new Date(l.at).toLocaleTimeString('en-GB')}</time><span class="tag">${esc(l.tag)}</span><span class="msg">${esc(l.msg)}</span></li>`).join('');
+}
+function renderStats(){
+  const purchases = S.tx.filter(x => x.kind !== 'funding');
+  const done = purchases.filter(x => x.status === 'success').length;
+  const ref = purchases.filter(x => x.status === 'refunded').length;
+  const pend = purchases.filter(x => x.status === 'pending').length;
+  const earn = purchases.filter(x => x.status === 'success').reduce((s,x) => s + x.fee + x.amount*x.rate/100 - (x.agentComm||0), 0);
+  const ledgerSum = balance();
+  const rebuilt = S.ledger.reduce((s,e) => s + (e.type==='credit'?e.amount:-e.amount), 0);
+  const ok = Math.abs(ledgerSum - rebuilt) < 0.001 && ledgerSum >= 0;
+  $('#stats').innerHTML = `
+    <div class="stat"><span>Ledger balance</span><b class="num">${naira(round2(ledgerSum))}</b><em class="${ok?'ok':'bad'}">${ok?'✓ matches wallet':'✗ mismatch'} · ${S.ledger.length} entries</em></div>
+    <div class="stat"><span>Your margin (fees + commission)</span><b class="num">${naira(round2(earn))}</b><em>VTpass API rates</em></div>
+    <div class="stat"><span>Delivered / refunded</span><b class="num">${done} / ${ref}</b><em>${pend} pending</em></div>
+    <div class="stat"><span>Requery queue</span><b class="num">${pend}</b><em>${pend ? 'checking every few seconds' : 'empty'}</em></div>`;
+}
+const OUTCOMES = [
+  ['auto','Realistic mix','85% instant success, 10% pending then success, 5% failed and refunded.'],
+  ['success','Success','The provider returns a token straight away.'],
+  ['pending','Pending','Provider says "processing". The requery job resolves it a few seconds later.'],
+  ['failed','Failed','Provider rejects it. The wallet is refunded automatically and the ledger shows both entries.'],
+  ['down','VTpass down','VTpass times out. The same request is retried once on the Baxi backup route.']
+];
+function renderOutcomes(){
+  $('#outcomes').innerHTML = OUTCOMES.map(([k,l]) => `<button class="pill" data-act="outcome" data-v="${k}" aria-pressed="${ui.outcome===k}">${l}</button>`).join('');
+  $('#outcomeHelp').textContent = OUTCOMES.find(o => o[0] === ui.outcome)[2];
+}
+
+/* ---------- render ---------- */
+function render(){
+  const ae = document.activeElement;
+  const fid = ae && ae.id && $('#view').contains(ae) ? ae.id : null;
+  const sel = fid && ae.selectionStart != null ? [ae.selectionStart, ae.selectionEnd] : null;
+  document.documentElement.lang = S.lang === 'ha' ? 'ha' : 'en';
+  $('#langBtn').textContent = S.lang === 'ha' ? 'EN' : 'HA';
+  $('#agentBadge').hidden = !S.agent;
+  $('#agentBadge').textContent = S.lang==='ha' ? 'Wakili' : 'Agent';
+  const v = VIEWS[ui.view] || VIEWS.home;
+  $('#view').innerHTML = v();
+  const tab = {home:'home',history:'history',profile:'profile'}[ui.view] || (ui.view==='receipt' ? 'history' : 'home');
+  $('#tabs').innerHTML = [['home',ICON.home],['history',ICON.list],['profile',ICON.user]].map(([k,i]) =>
+    `<button class="tab" data-act="nav" data-v="${k}" ${tab===k?'aria-current="page"':''}>${i}<span>${t(k)}</span></button>`).join('');
+  renderLayer();
+  if (fid) { const el = document.getElementById(fid); if (el) { el.focus(); if (sel && el.setSelectionRange) try { el.setSelectionRange(sel[0], sel[1]); } catch(e){} } }
+  renderStats();
+}
+function go(view){ ui.view = view; render(); $('#view').scrollTop = 0; }
+
+function txRow(x){
+  const isFund = x.kind === 'funding';
+  const icoTxt = isFund ? '+₦' : x.kind === 'electricity' ? (x.short || 'PWR') : (NETS[x.net]?.name || x.title).slice(0,6);
+  const title = isFund ? (S.lang==='ha'?'Shigar kuɗi':'Wallet top-up') : x.kind==='electricity' ? x.title : `${x.title} ${x.kind==='data' ? (x.plan||'data') : t('airtime').toLowerCase()}`;
+  const sign = isFund || x.status === 'refunded' ? '' : '−';
+  return `<button class="row" data-act="open-tx" data-v="${x.id}">
+    <span class="ico ${isFund?'fund':''}">${esc(icoTxt)}</span>
+    <span class="row-main"><b>${esc(title)}</b><span>${esc(isFund ? x.target : x.target)} · ${when(x.at)}</span></span>
+    <span class="row-end"><b class="num">${isFund?'+':sign}${naira(x.amount + (x.fee||0))}</b>${isFund?'':`<span class="chip ${x.status}">${t(x.status)}</span>`}</span>
+  </button>`;
+}
+function todaysSpend(){ return S.tx.filter(x => x.kind!=='funding' && isToday(x.at) && x.status!=='refunded').reduce((s,x)=>s+x.amount+x.fee,0); }
+function agentCommToday(){ return S.tx.filter(x => isToday(x.at) && x.status==='success').reduce((s,x)=>s+(x.agentComm||0),0); }
+
+const VIEWS = {
+  home(){
+    const recent = S.tx.slice(0,4);
+    const bal = balance(); const whole = Math.floor(bal), kobo = Math.round((bal-whole)*100);
+    return `
+    <section class="balance" aria-label="${t('balance')}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div><div class="lbl">${t('balance')}</div><div class="amt num">₦${whole.toLocaleString('en-NG')}<small>.${String(kobo).padStart(2,'0')}</small></div></div>
+        <button class="btn-on-accent" data-act="fund">+ ${t('addMoney')}</button>
+      </div>
+      <div class="va"><span>${esc(S.va.bank)} · <b>${esc(S.va.number)}</b></span><button class="mini-link" data-act="copy" data-v="${S.va.number.replace(/\s/g,'')}">${S.lang==='ha'?'Kwafi':'Copy'}</button></div>
+    </section>
+    ${S.agent ? `<div class="agent-strip"><span>${t('todayComm')}<br><span style="opacity:.85">${t('feeWaived')}</span></span><b class="num">${naira(round2(agentCommToday()))}</b></div>` : ''}
+    <div class="services">
+      <button class="svc" data-act="go" data-v="elec">${ICON.bolt}${t('elec')}</button>
+      <button class="svc" data-act="go" data-v="air">${ICON.phone}${t('airtime')}</button>
+      <button class="svc" data-act="go" data-v="dat">${ICON.wifi}${t('data')}</button>
+      <button class="svc" disabled aria-disabled="true">${ICON.tv}${t('tv')}<span class="soon">${t('soon')}</span></button>
+    </div>
+    <div class="sec-h"><h3>${t('recent')}</h3><button class="linkbtn" data-act="nav" data-v="history">${t('seeAll')}</button></div>
+    <div class="list">${recent.length ? recent.map(txRow).join('') : `<p class="empty">${t('noTx')}</p>`}</div>`;
+  },
+
+  elec(){
+    const E = ui.elec, d = disco(E.disco);
+    const saved = S.meters.filter(m => m.disco === E.disco && m.type === E.type);
+    const amt = Number(E.amount) || 0;
+    const fee = S.agent ? 0 : 100;
+    const units = E.customer && E.type==='prepaid' && amt ? round2(amt/1.075/TARIFF[E.customer.band]).toFixed(1) : null;
+    const meterOk = /^\d{11}$|^\d{13}$/.test(E.meter);
+    const amtOk = amt >= 1000 && amt <= 500000;
+    return `
+    <div class="vhead"><button class="iconbtn" data-act="go" data-v="home" aria-label="Back">${ICON.back}</button><h2>${t('elec')}</h2></div>
+    <label class="field"><span>${t('disco')}</span>
+      <select class="input" id="e-disco" data-in="e-disco">${DISCOS.map(x=>`<option value="${x.code}" ${x.code===E.disco?'selected':''}>${x.name} (${x.short})</option>`).join('')}</select></label>
+    <div class="field"><span>${t('meterType')}</span><div class="seg" role="group">
+      <button data-act="e-type" data-v="prepaid" aria-pressed="${E.type==='prepaid'}">${t('prepaid')}</button>
+      <button data-act="e-type" data-v="postpaid" aria-pressed="${E.type==='postpaid'}">${t('postpaid')}</button></div></div>
+    ${saved.length ? `<div class="field"><span>${t('saved')}</span><div class="pills">${saved.map(m=>`<button class="pill" data-act="e-saved" data-v="${m.meter}" aria-pressed="${E.meter===m.meter}">${esc(m.name.split(' ')[0])} · ${m.meter.slice(-4)}</button>`).join('')}</div></div>` : ''}
+    <label class="field"><span>${t('meterNo')}</span>
+      <input class="input big num" id="e-meter" data-in="e-meter" inputmode="numeric" autocomplete="off" maxlength="13" placeholder="11 or 13 digits" value="${esc(E.meter)}" aria-invalid="${!!E.meterErr}"></label>
+    <p class="err">${esc(E.meterErr)}</p>
+    ${E.customer ? `<div class="cust"><div><b>${esc(E.customer.name)}</b><span>${esc(E.customer.address)} · Band ${E.customer.band} · ${naira(TARIFF[E.customer.band])}/kWh</span></div><span class="ok">✓ ${t('verified')}</span></div>`
+      : `<button class="btn ghost" data-act="e-verify" ${!meterOk||E.verifying?'disabled':''}>${E.verifying?t('verifying'):t('verify')}</button>
+         <p class="hint">${S.lang==='ha'?'Gwada 04223456781. 00000000000 ba ta wanzu ba.':'Try 04223456781. A meter of all zeros returns "not found".'}</p>`}
+    <label class="field"><span>${t('amount')} (₦)</span>
+      <input class="input big num" id="e-amt" data-in="e-amt" inputmode="numeric" autocomplete="off" placeholder="Min ₦1,000" value="${esc(E.amount)}"></label>
+    <div class="pills">${[2000,5000,10000,20000].map(a=>`<button class="pill" data-act="e-quick" data-v="${a}" aria-pressed="${amt===a}">${naira(a)}</button>`).join('')}</div>
+    ${amt ? `<div class="summary num">
+      <div><span class="muted">${t('tokenValue')}</span><span>${naira(amt)}</span></div>
+      <div><span class="muted">${t('fee')}</span><span>${fee ? naira(fee) : (S.lang==='ha'?'Kyauta (wakili)':'Free (agent)')}</span></div>
+      ${units ? `<div><span class="muted">${t('units')}</span><span>≈ ${units} kWh</span></div>` : ''}
+      <div class="tot"><span>${t('total')}</span><span>${naira(amt+fee)}</span></div></div>` : ''}
+    ${amt && !amtOk ? `<p class="err">${S.lang==='ha'?'Adadi ya kasance tsakanin ₦1,000 da ₦500,000.':'Enter between ₦1,000 and ₦500,000.'}</p>` : ''}
+    <p class="err">${esc(E.err)}</p>
+    <button class="btn" data-act="e-go" ${E.customer && amtOk ? '' : 'disabled'}>${t('cont')}</button>
+    <p class="hint">${d.short} ${S.lang==='ha'?'lada':'commission'}: ${d.rate}%${d.est?' (est.)':''} · VAT 7.5% ${S.lang==='ha'?'yana cikin unit':'is deducted from units'}</p>`;
+  },
+
+  air(){ return phoneForm('air'); },
+  dat(){ return phoneForm('dat'); },
+
+  receipt(){
+    const x = S.tx.find(y => y.id === ui.receipt);
+    if (!x) return VIEWS.history();
+    const isFund = x.kind === 'funding';
+    const total = x.amount + (x.fee||0);
+    const sub = isFund ? 'Wallet top-up · ' + x.target : x.kind==='electricity' ? `${x.title} · ${t(x.meterType)}` : `${x.title} · ${x.kind==='data' ? x.plan : t('airtime')}`;
+    const routeName = {vtpass:'VTpass API', baxi:'Baxi (backup route)', paystack:'Paystack virtual account'}[x.provider] || x.provider;
+    return `
+    <div class="vhead"><button class="iconbtn" data-act="nav" data-v="history" aria-label="Back">${ICON.back}</button><h2>${S.lang==='ha'?'Rasiti':'Receipt'}</h2></div>
+    <div class="hero"><span class="chip ${x.status}">${t(x.status)}</span><div class="amt num">${naira(total)}</div><div class="sub">${esc(sub)}</div></div>
+    ${x.status==='success' && x.token ? `
+      <div class="lcd" aria-label="Token">
+        <div class="lcd-top"><span>STS token · 20 digits</span><span>${esc(x.short)}</span></div>
+        <div class="lcd-digits num" id="tok">${tokenGroups(x.token)}</div>
+        <div class="lcd-bot"><span>Units <b>${x.units} kWh</b></span><span>Band <b>${x.band}</b> · ${naira(TARIFF[x.band])}/kWh</span></div>
+      </div>
+      <div class="two"><button class="btn sm" data-act="copy" data-v="${x.token}">${t('copyToken')}</button><button class="btn sm ghost" data-act="sms" data-v="${x.id}">${t('sendSms')}</button></div>` : ''}
+    ${x.status==='success' && x.kind==='electricity' && !x.token ? `<div class="banner info">${t('postpaidMsg')}</div>` : ''}
+    ${x.status==='pending' ? `<div class="banner pending"><span>${t('pendingMsg')}</span><button class="btn sm ghost" data-act="requery" data-v="${x.id}">${t('checkNow')}</button></div>` : ''}
+    ${x.status==='refunded' ? `<div class="banner refunded"><span><b>${naira(total)}</b> ${t('refundMsg')} ${esc(x.failReason||'')}</span></div>` : ''}
+    <dl class="dl">
+      <div><dt>${t('ref')}</dt><dd class="mono">${x.id}</dd></div>
+      ${x.kind==='electricity' ? `<div><dt>${t('meterNo')}</dt><dd class="mono">${x.target}</dd></div><div><dt>${t('customer')}</dt><dd>${esc(x.customer)}</dd></div>` : ''}
+      ${x.kind==='airtime'||x.kind==='data' ? `<div><dt>${t('phone')}</dt><dd class="mono">${x.target}</dd></div>` : ''}
+      ${!isFund ? `<div><dt>${t('amount')}</dt><dd class="num">${naira(x.amount)}</dd></div><div><dt>${t('fee')}</dt><dd class="num">${naira(x.fee||0)}</dd></div>` : ''}
+      ${x.agentComm ? `<div><dt>${t('todayComm').replace("Today's ",'').replace('yau','')}</dt><dd class="num" style="color:var(--good)">+${naira(round2(x.agentComm))}</dd></div>` : ''}
+      <div><dt>${t('route')}</dt><dd>${routeName}</dd></div>
+      ${x.attempts ? `<div><dt>${t('attempts')}</dt><dd class="num">${x.attempts}</dd></div>` : ''}
+      <div><dt>${t('when')}</dt><dd>${when(x.at)}</dd></div>
+    </dl>
+    <button class="btn ghost" data-act="go" data-v="home">${t('done')}</button>`;
+  },
+
+  history(){
+    const f = ui.filter;
+    const list = S.tx.filter(x => f==='all' || (f==='bills' ? x.kind!=='funding' : x.kind==='funding'));
+    return `
+    <div class="vhead"><h2>${t('history')}</h2></div>
+    <div class="pills" role="group">${['all','bills','funding'].map(k=>`<button class="pill" data-act="filter" data-v="${k}" aria-pressed="${f===k}">${t(k)}</button>`).join('')}</div>
+    <div class="list">${list.length ? list.map(txRow).join('') : `<p class="empty">${t('noTx')}</p>`}</div>`;
+  },
+
+  profile(){
+    const lim = S.agent ? LIMIT.agent : LIMIT.customer;
+    return `
+    <div class="vhead"><h2>${t('profile')}</h2></div>
+    <div class="set"><div><b>${t('language')}</b><span>English · Hausa</span></div>
+      <div class="seg compact" role="group"><button data-act="setlang" data-v="en" aria-pressed="${S.lang==='en'}">EN</button><button data-act="setlang" data-v="ha" aria-pressed="${S.lang==='ha'}">HA</button></div></div>
+    <div class="set"><div><b>${t('agentMode')}</b><span>${t('agentSub')}</span></div>
+      <button class="switch" role="switch" aria-checked="${S.agent}" aria-label="${t('agentMode')}" data-act="agent"></button></div>
+    <div class="set"><div><b>${t('limit')}</b><span>${naira(Math.max(0, lim - todaysSpend()))} ${t('dailyLeft')} · ${naira(lim)}</span></div></div>
+    <div class="set" style="display:block"><b>${t('saved')}</b>
+      <div class="list" style="margin-top:6px">${S.meters.length ? S.meters.map((m,i)=>`
+        <div class="row" style="padding:8px 0"><span class="ico">${disco(m.disco).short}</span><span class="row-main"><b>${esc(m.name)}</b><span class="mono">${m.meter} · ${t(m.type)}</span></span>
+        <button class="linkbtn" data-act="del-meter" data-v="${i}" style="color:var(--bad)">${S.lang==='ha'?'Cire':'Remove'}</button></div>`).join('') : `<p class="hint">${S.lang==='ha'?'Babu':'None yet'}</p>`}</div></div>
+    <div class="set"><div><b>PIN</b><span>${t('demoPin')}</span></div></div>
+    <button class="btn ghost" data-act="reset">${t('reset')}</button>`;
+  }
+};
+
+function detectNet(p){
+  const n = p.startsWith('234') ? '0'+p.slice(3) : p;
+  const pre = n.slice(0,4);
+  return Object.keys(NETS).find(k => NETS[k].pre.includes(pre)) || null;
+}
+const normPhone = p => p.startsWith('234') && p.length===13 ? '0'+p.slice(3) : p;
+function phoneForm(kind){
+  const F = ui[kind], isAir = kind==='air';
+  const phone = normPhone(F.phone);
+  const phoneOk = /^0[789][01]\d{8}$/.test(phone);
+  const plans = F.net ? PLANS[F.net] : [];
+  const plan = F.plan != null && plans[F.plan] ? plans[F.plan] : null;
+  const amt = isAir ? Number(F.amount)||0 : plan ? plan[2] : 0;
+  const amtOk = isAir ? amt>=50 && amt<=50000 : !!plan;
+  return `
+  <div class="vhead"><button class="iconbtn" data-act="go" data-v="home" aria-label="Back">${ICON.back}</button><h2>${isAir?t('airtime'):t('data')}</h2></div>
+  <label class="field"><span>${t('phone')}</span>
+    <input class="input big num" id="${kind}-phone" data-in="${kind}-phone" inputmode="tel" autocomplete="off" maxlength="13" placeholder="0803 123 4567" value="${esc(F.phone)}"></label>
+  ${F.phone.length>=4 && !F.net ? `<p class="hint">${S.lang==='ha'?'Ba a gane kamfanin ba, zaɓi daga ƙasa.':'Network not recognised from the number. Pick one below.'}</p>`:''}
+  <div class="field"><span>${t('network')}${F.net && !F.manualNet ? (S.lang==='ha'?' · an gane':' · detected') : ''}</span>
+    <div class="pills">${Object.keys(NETS).map(k=>`<button class="pill" data-act="${kind}-net" data-v="${k}" aria-pressed="${F.net===k}">${NETS[k].name}</button>`).join('')}</div></div>
+  ${isAir ? `
+    <label class="field"><span>${t('amount')} (₦)</span><input class="input big num" id="air-amt" data-in="air-amt" inputmode="numeric" autocomplete="off" placeholder="₦50 – ₦50,000" value="${esc(F.amount)}"></label>
+    <div class="pills">${[100,200,500,1000,2000].map(a=>`<button class="pill" data-act="air-quick" data-v="${a}" aria-pressed="${amt===a}">${naira(a)}</button>`).join('')}</div>`
+  : `<div class="field"><span>${t('plan')}</span>${F.net ? `<div class="plans">${plans.map((p,i)=>`<button class="plan" data-act="dat-plan" data-v="${i}" aria-pressed="${F.plan===i}"><span><b>${p[0]}</b><br><span>${p[1]} ${p[1]===1?t('day'):t('days')}</span></span><b class="num">${naira(p[2])}</b></button>`).join('')}</div>` : `<p class="hint">${S.lang==='ha'?'Zaɓi kamfani da farko.':'Choose a network first.'}</p>`}</div>`}
+  ${amt ? `<div class="summary num"><div><span class="muted">${t('fee')}</span><span>${naira(0)}</span></div><div class="tot"><span>${t('total')}</span><span>${naira(amt)}</span></div></div>`:''}
+  <p class="err">${esc(F.err)}</p>
+  <button class="btn" data-act="${kind}-go" ${phoneOk && F.net && amtOk ? '' : 'disabled'}>${t('buy')}</button>
+  ${!isAir ? `<p class="hint">${S.lang==='ha'?'Farashin gwaji ne.':'Plan prices are sample values.'}</p>`:''}`;
+}
+
+/* ---------- layer: sheets + processing ---------- */
+function renderLayer(){
+  const L = $('#layer');
+  if (!ui.layer){ L.innerHTML = ''; return; }
+  if (ui.layer === 'pin'){
+    const locked = Date.now() < ui.lockUntil;
+    L.innerHTML = `<div class="layer"><button class="scrim" data-act="close" aria-label="Close"></button>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pinH">
+        <h3 id="pinH">${t('pin')}</h3><p class="hint" style="display:block">${esc(ui.pinLabel)}</p>
+        <div class="dots" id="dots">${[0,1,2,3].map(i=>`<i class="${i<ui.pin.length?'on':''}"></i>`).join('')}</div>
+        <p class="err" id="pinErr">${locked ? (S.lang==='ha'?'An kulle na ɗan lokaci. Jira daƙiƙa 30.':'Too many tries. Wait 30 seconds.') : ui.pinTries ? (S.lang==='ha'?`PIN ba daidai ba. Saura ${3-ui.pinTries}.`:`Wrong PIN. ${3-ui.pinTries} tries left.`) : ''}</p>
+        <div class="keypad">${['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>k?`<button class="key" data-act="key" data-v="${k}" ${locked?'disabled':''} aria-label="${k==='⌫'?'Delete':k}">${k}</button>`:'<span class="key blank"></span>').join('')}</div>
+        <p class="hint" style="display:block;text-align:center">${t('demoPin')}</p>
+      </div></div>`;
+  } else if (ui.layer === 'fund'){
+    L.innerHTML = `<div class="layer"><button class="scrim" data-act="close" aria-label="Close"></button>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fundH">
+        <h3 id="fundH">${t('addMoney')}</h3>
+        <div class="banner info"><span><b>${t('vaTitle')}</b><br>${esc(S.va.bank)} · <span class="mono">${esc(S.va.number)}</span><br>${esc(S.va.name)}</span>
+          <button class="btn sm ghost" data-act="copy" data-v="${S.va.number.replace(/\s/g,'')}">${S.lang==='ha'?'Kwafi lamba':'Copy number'}</button></div>
+        <p class="hint" style="display:block">${t('vaSub')}</p>
+        <label class="field"><span>${t('transferAmt')} (₦)</span><input class="input big num" id="f-amt" data-in="f-amt" inputmode="numeric" value="${esc(ui.fund.amount)}"></label>
+        <div class="pills">${[2000,5000,10000,50000].map(a=>`<button class="pill" data-act="f-quick" data-v="${a}" aria-pressed="${Number(ui.fund.amount)===a}">${naira(a)}</button>`).join('')}</div>
+        <button class="btn" data-act="f-go" ${Number(ui.fund.amount)>=100 && Number(ui.fund.amount)<=1000000 ? '' : 'disabled'}>${t('simulate')}</button>
+      </div></div>`;
+  } else if (ui.layer === 'proc'){
+    const x = ui.procTx;
+    const step = ui.procStep;
+    const name = x.kind==='electricity' ? x.title : x.title;
+    L.innerHTML = `<div class="proc" role="alertdialog" aria-live="assertive"><div class="spin" aria-hidden="true"></div>
+      <h3>${t('processing')} ${naira(x.amount + x.fee)}</h3><p>${esc(name)} · <span class="mono">${esc(x.target)}</span></p>
+      <ul class="steps">
+        <li class="done">${t('debited')}</li>
+        <li class="${step===2?'warn':step>=1?'done':'now'}">${step===2 ? (S.lang==='ha'?'VTpass ya yi jinkiri, ana sauya hanya…':'VTpass not responding, switching route…') : t('sent') + (x.provider==='baxi'?' (Baxi)':'')}</li>
+        <li class="${step===3?'now':''}">${x.kind==='electricity'&&x.meterType==='prepaid' ? t('waiting') : (S.lang==='ha'?'Ana jiran tabbatarwa':'Waiting for confirmation')}</li>
+      </ul></div>`;
+  }
+}
+function openPin(label, cb){
+  ui.pin=''; ui.pinCb=cb; ui.pinLabel=label; ui.layer='pin'; renderLayer();
+  setTimeout(()=>{ const k = document.querySelector('.key'); k && k.focus(); }, 30);
+}
+function pressKey(k){
+  if (Date.now() < ui.lockUntil) return;
+  if (k === '⌫') ui.pin = ui.pin.slice(0,-1);
+  else if (ui.pin.length < 4) ui.pin += k;
+  renderLayer();
+  if (ui.pin.length === 4){
+    if (ui.pin === '1234'){
+      ui.pinTries = 0; const cb = ui.pinCb; ui.layer=null; ui.pinCb=null; ui.pin=''; renderLayer();
+      log('AUTH','Transaction PIN verified','ok'); cb && cb();
+    } else {
+      ui.pinTries++; ui.pin='';
+      log('AUTH',`Wrong PIN (attempt ${ui.pinTries}/3)`,'warn');
+      if (ui.pinTries >= 3){ ui.lockUntil = Date.now()+30000; ui.pinTries = 0; log('GUARD','PIN locked for 30s after 3 failed attempts','bad');
+        setTimeout(()=>{ if (ui.layer==='pin') renderLayer(); }, 30100); }
+      renderLayer(); const d=$('#dots'); d && d.classList.add('shake');
+    }
+  }
+}
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg){ const el=$('#toast'); el.textContent=msg; el.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.hidden=true, 2600); }
+
+/* ---------- money movement ---------- */
+function checkSpend(total){
+  if (total > balance()) return S.lang==='ha' ? `Kuɗin walat bai isa ba. Kana buƙatar ${naira(round2(total-balance()))} kuma.` : `Not enough in your wallet. Add ${naira(round2(total-balance()))} more.`;
+  const lim = S.agent ? LIMIT.agent : LIMIT.customer;
+  if (todaysSpend() + total > lim) return S.lang==='ha' ? 'Wannan zai wuce iyakar yau.' : `This goes over your daily limit of ${naira(lim)}.`;
+  return '';
+}
+function pickAuto(){ const r = Math.random(); return r < .85 ? 'success' : r < .95 ? 'pending' : 'failed'; }
+
+function purchase(spec){
+  if (ui.inflight){ log('GUARD','Second tap ignored: a request is already in flight (idempotency key held)','warn'); return; }
+  const total = spec.amount + spec.fee;
+  const err = checkSpend(total);
+  if (err){ log('GUARD', 'Blocked before debit: ' + err, 'warn'); return err; }
+  ui.inflight = true;
+  const x = {...spec, id:nextId(), status:'pending', at:Date.now(), attempts:0, provider:'vtpass', requestId:rid(), nextCheck:Infinity};
+  S.tx.unshift(x);
+  debit(total, x.id, x.title);
+  log('LEDGER', `debit ${naira(total)} ref=${x.id} → balance ${naira(round2(balance()))}`);
+  save();
+  ui.procTx = x; ui.procStep = 0; ui.layer = 'proc'; renderLayer(); renderStats();
+  const mode = ui.outcome === 'auto' ? pickAuto() : ui.outcome;
+  log('API', `POST vtpass/pay request_id=${x.requestId} ${x.short||x.title} ${naira(x.amount)}`);
+  if (mode === 'down'){
+    setTimeout(()=>{ log('API','VTpass: no response after timeout','bad'); ui.procStep=2; renderLayer();
+      log('ROUTE',`Retrying request_id=${x.requestId} on Baxi (same idempotency key, no double debit)`,'warn'); x.provider='baxi';
+      setTimeout(()=>{ ui.procStep=3; renderLayer(); setTimeout(()=>finish(x,'success'),700); },900); },1300);
+  } else {
+    setTimeout(()=>{ ui.procStep=1; renderLayer(); },600);
+    setTimeout(()=>{ ui.procStep=3; renderLayer(); },1100);
+    setTimeout(()=>finish(x, mode), 1700);
+  }
+}
+function finish(x, mode){
+  ui.inflight = false;
+  if (mode === 'success') succeed(x);
+  else if (mode === 'pending'){ x.nextCheck = Date.now()+3500; log('API',`Provider: "processing" for ${x.id} → added to requery queue`,'warn'); }
+  else fail(x, S.lang==='ha' ? 'Kamfanin ya ƙi cinikin.' : 'The provider declined the transaction.');
+  save(); ui.layer = null; ui.receipt = x.id; go('receipt');
+}
+function succeed(x){
+  x.status = 'success';
+  if (x.kind==='electricity' && x.meterType==='prepaid'){ x.token = newToken(); x.units = Number((x.amount/1.075/TARIFF[x.band]).toFixed(1)); }
+  log('API', `${x.provider==='baxi'?'Baxi':'VTpass'}: delivered ${x.id}${x.token?' · token issued, '+x.units+' kWh':''}`, 'ok');
+  if (S.agent){
+    const ar = x.agentRate || 0;
+    x.agentComm = round2(x.amount*ar/100);
+    if (x.agentComm > 0){ credit(x.agentComm, x.id+'-C', 'Agent commission'); log('LEDGER',`credit agent commission ${naira(x.agentComm)} (${ar}%) ref=${x.id}-C`,'ok'); }
+  }
+  if (x.token) log('SMS', `Token for ${x.target} queued to customer phone`);
+}
+function fail(x, reason){
+  x.status = 'refunded'; x.failReason = reason;
+  const total = x.amount + x.fee;
+  credit(total, x.id+'-R', 'Refund');
+  log('API', `Provider rejected ${x.id}`, 'bad');
+  log('LEDGER', `credit refund ${naira(total)} ref=${x.id}-R → balance ${naira(round2(balance()))}`, 'ok');
+}
+function requery(x, manual){
+  if (!x || x.status!=='pending' || x.nextCheck === Infinity) return;
+  x.attempts = (x.attempts||0) + 1;
+  log('QUEUE', `${manual?'Manual':'Scheduled'} requery #${x.attempts} for ${x.id}`);
+  if (x.attempts >= 2){ succeed(x); }
+  else { x.nextCheck = Date.now()+4000; log('API', `${x.id} still processing, next check in 4s`, 'warn'); }
+  save();
+  if (ui.view==='receipt' && ui.receipt===x.id) render(); else if (ui.view==='home'||ui.view==='history') render();
+  if (x.status==='success') toast(S.lang==='ha' ? `${x.id}: an yi nasara` : `${x.id} confirmed: delivered`);
+}
+setInterval(()=>{ const now = Date.now(); S.tx.filter(x => x.status==='pending' && x.nextCheck <= now).forEach(x => requery(x,false)); }, 1000);
+
+function fundWallet(amount){
+  const ref = 'PSK_' + rid();
+  log('WEBHOOK', `Paystack charge.success ref=${ref} amount=${naira(amount)} → ${S.va.number}`);
+  setTimeout(()=>{
+    log('GUARD','Webhook signature verified (HMAC-SHA512)','ok');
+    applyWebhook(ref, amount);
+  }, 700);
+}
+function applyWebhook(ref, amount){
+  if (S.webhooks.includes(ref)){ log('GUARD', `Duplicate webhook ref=${ref} ignored. Wallet unchanged at ${naira(round2(balance()))}`, 'ok'); return; }
+  S.webhooks.push(ref); if (S.webhooks.length > 60) S.webhooks.shift();
+  ui.lastWebhook = {ref, amount};
+  const x = {id:nextId(), kind:'funding', title:'Bank transfer', target:S.va.bank, amount, fee:0, status:'success', provider:'paystack', at:Date.now(), ref};
+  S.tx.unshift(x); credit(amount, x.id, 'Bank transfer');
+  log('LEDGER', `credit ${naira(amount)} ref=${x.id} → balance ${naira(round2(balance()))}`, 'ok');
+  save(); render(); toast((S.lang==='ha'?'An karɓi ':'Received ') + naira(amount));
+}
+
+/* ---------- events ---------- */
+function verifyMeter(){
+  const E = ui.elec;
+  if (!/^\d{11}$|^\d{13}$/.test(E.meter)){ E.meterErr = S.lang==='ha'?'Lambar mita tana da lamba 11 ko 13.':'Meter numbers have 11 or 13 digits.'; render(); return; }
+  E.verifying = true; E.meterErr=''; render();
+  log('API', `GET vtpass/merchant-verify ${disco(E.disco).short} ${E.type} meter=${E.meter}`);
+  const meter = E.meter, dc = E.disco;
+  setTimeout(()=>{
+    if (ui.elec.meter !== meter || ui.elec.disco !== dc) return; // stale response
+    E.verifying = false;
+    if (/^(\d)\1+$/.test(meter)){ E.meterErr = S.lang==='ha'?'Ba a sami abokin ciniki da wannan lambar ba. Duba lambar da kamfanin.':'No customer found for this meter. Check the number and the company.'; log('API','Verify: customer not found','warn'); }
+    else {
+      const h = hash(meter + dc);
+      const savedM = S.meters.find(m => m.meter===meter && m.disco===dc);
+      E.customer = {name: savedM ? savedM.name : NAMES[h % NAMES.length], address: AREAS[(h>>3) % AREAS.length] + ', Kaduna', band: ['A','A','B','C'][(h>>5)%4]};
+      log('API', `Verify OK: ${E.customer.name}, Band ${E.customer.band}`, 'ok');
+    }
+    render();
+  }, 900);
+}
+function startElec(){
+  const E = ui.elec, d = disco(E.disco), amt = Number(E.amount);
+  const fee = S.agent ? 0 : 100;
+  E.err = checkSpend(amt+fee); if (E.err){ render(); return; }
+  openPin(`${t('payTo')} ${naira(amt+fee)} → ${d.name}`, ()=>{
+    const r = purchase({kind:'electricity', title:d.name, short:d.short, disco:d.code, meterType:E.type, target:E.meter, customer:E.customer.name, band:E.customer.band,
+      amount:amt, fee, rate:d.rate, agentRate: Math.max(0.3, round2(d.rate-0.5))});
+    if (typeof r === 'string'){ E.err = r; render(); return; }
+    if (!S.meters.some(m => m.meter===E.meter && m.disco===E.disco)){
+      S.meters.push({disco:E.disco, type:E.type, meter:E.meter, name:E.customer.name}); save();
+    }
+    ui.elec = {...ui.elec, meter:'', customer:null, amount:'', err:'', meterErr:''};
+  });
+}
+function startPhone(kind){
+  const F = ui[kind], isAir = kind==='air', n = NETS[F.net];
+  const phone = normPhone(F.phone);
+  const plan = !isAir ? PLANS[F.net][F.plan] : null;
+  const amt = isAir ? Number(F.amount) : plan[2];
+  F.err = checkSpend(amt); if (F.err){ render(); return; }
+  openPin(`${t('payTo')} ${naira(amt)} → ${n.name} ${isAir?t('airtime'):plan[0]}`, ()=>{
+    const r = purchase({kind:isAir?'airtime':'data', title:n.name, short:n.name, net:F.net, plan: plan ? `${plan[0]} · ${plan[1]} ${plan[1]===1?t('day'):t('days')}` : null,
+      target:phone, amount:amt, fee:0, rate:n.rate, agentRate: round2(n.rate-1)});
+    if (typeof r === 'string'){ F.err = r; render(); return; }
+    ui[kind] = {phone:'', net:null, manualNet:false, amount:'', plan:null, err:''};
+  });
+}
+async function copy(text){
+  try { await navigator.clipboard.writeText(text); toast(S.lang==='ha'?'An kwafi':'Copied'); }
+  catch(e){ const tok = $('#tok'); if (tok){ const r=document.createRange(); r.selectNodeContents(tok); const s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+    toast(S.lang==='ha'?'Zaɓi rubutun ka kwafa':'Select the text to copy it'); }
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+  const a = b.dataset.act, v = b.dataset.v;
+  switch(a){
+    case 'nav': ui.receipt=null; go(v); break;
+    case 'go': go(v); break;
+    case 'lang': S.lang = S.lang==='ha'?'en':'ha'; save(); render(); break;
+    case 'setlang': S.lang = v; save(); render(); break;
+    case 'agent': S.agent = !S.agent; save(); log('ACCOUNT', S.agent ? 'Switched to agent tier: fee waived, commission share on' : 'Switched to customer tier'); render(); break;
+    case 'fund': ui.layer='fund'; renderLayer(); break;
+    case 'close': ui.layer=null; ui.pin=''; renderLayer(); break;
+    case 'f-quick': ui.fund.amount = v; renderLayer(); break;
+    case 'f-go': { const amt = Number(ui.fund.amount); ui.layer=null; renderLayer(); toast(S.lang==='ha'?'Ana jiran banki…':'Waiting for the bank…'); fundWallet(amt); break; }
+    case 'copy': copy(v); break;
+    case 'sms': { const x=S.tx.find(y=>y.id===v); log('SMS', `Resent token for ${x.target} (Termii)`, 'ok'); toast(S.lang==='ha'?'An aika SMS':'SMS sent'); break; }
+    case 'open-tx': ui.receipt=v; go('receipt'); break;
+    case 'filter': ui.filter=v; render(); break;
+    case 'requery': requery(S.tx.find(y=>y.id===v), true); break;
+    case 'key': pressKey(v); break;
+    case 'e-type': ui.elec.type=v; ui.elec.customer=null; ui.elec.meterErr=''; render(); break;
+    case 'e-saved': ui.elec.meter=v; ui.elec.customer=null; ui.elec.meterErr=''; render(); verifyMeter(); break;
+    case 'e-verify': verifyMeter(); break;
+    case 'e-quick': ui.elec.amount=v; ui.elec.err=''; render(); break;
+    case 'e-go': startElec(); break;
+    case 'air-net': case 'dat-net': { const k=a.slice(0,3); ui[k].net=v; ui[k].manualNet=true; ui[k].plan=null; ui[k].err=''; render(); break; }
+    case 'air-quick': ui.air.amount=v; ui.air.err=''; render(); break;
+    case 'dat-plan': ui.dat.plan=Number(v); ui.dat.err=''; render(); break;
+    case 'air-go': startPhone('air'); break;
+    case 'dat-go': startPhone('dat'); break;
+    case 'del-meter': S.meters.splice(Number(v),1); save(); render(); break;
+    case 'outcome': ui.outcome=v; renderOutcomes(); log('DEMO', `Next purchase outcome set to "${OUTCOMES.find(o=>o[0]===v)[1]}"`); break;
+    case 'replay':
+      if (!ui.lastWebhook){ log('DEMO','No webhook yet. Add money first, then replay it.','warn'); break; }
+      log('WEBHOOK', `Paystack charge.success ref=${ui.lastWebhook.ref} (replayed by bank)`);
+      setTimeout(()=>{ log('GUARD','Webhook signature verified (HMAC-SHA512)','ok'); applyWebhook(ui.lastWebhook.ref, ui.lastWebhook.amount); }, 500);
+      break;
+    case 'double': {
+      if (ui.layer || ui.inflight){ log('DEMO','Finish the current step first.','warn'); break; }
+      const d = disco('kaduna');
+      const spec = {kind:'electricity', title:d.name, short:d.short, disco:'kaduna', meterType:'prepaid', target:'04223456781', customer:'Aisha Bello', band:'A', amount:2000, fee:S.agent?0:100, rate:d.rate, agentRate:1};
+      log('DEMO','Simulating two taps 80 ms apart on "Pay ₦2,000" for meter 04223456781');
+      const r = purchase(spec);
+      if (typeof r === 'string'){ toast(r); break; }
+      setTimeout(()=>purchase(spec), 80);
+      break; }
+    case 'reset':
+      try { localStorage.removeItem(STORE); } catch(err){}
+      S = seed(); ui.logs=[]; ui.view='home'; ui.layer=null; ui.inflight=false; ui.lastWebhook=null;
+      ui.elec={disco:'kaduna', type:'prepaid', meter:'', customer:null, verifying:false, amount:'', err:'', meterErr:''};
+      ui.air={phone:'', net:null, manualNet:false, amount:'', err:''}; ui.dat={phone:'', net:null, manualNet:false, plan:null, err:''};
+      log('DEMO', `Demo reset. Ledger rebuilt from ${S.ledger.length} entries.`); render(); break;
+  }
+});
+
+document.addEventListener('input', e => {
+  const el = e.target, k = el.dataset && el.dataset.in; if (!k) return;
+  const digits = el.value.replace(/\D/g,'');
+  if (k==='e-disco'){ ui.elec.disco = el.value; ui.elec.customer=null; ui.elec.meterErr=''; render(); return; }
+  if (k==='e-meter'){ ui.elec.meter = digits.slice(0,13); ui.elec.customer=null; ui.elec.meterErr=''; ui.elec.err=''; }
+  if (k==='e-amt'){ ui.elec.amount = digits.slice(0,6); ui.elec.err=''; }
+  if (k==='air-phone' || k==='dat-phone'){ const F = ui[k.slice(0,3)]; F.phone = digits.slice(0,13); F.err='';
+    if (!F.manualNet || F.phone.length < 4){ const n = detectNet(F.phone); if (n !== F.net){ F.net = n; F.plan = null; } F.manualNet = false; } }
+  if (k==='air-amt'){ ui.air.amount = digits.slice(0,5); ui.air.err=''; }
+  if (k==='f-amt'){ ui.fund.amount = digits.slice(0,7); const pos = el.selectionStart; renderLayer(); const n=$('#f-amt'); n.focus(); try{n.setSelectionRange(pos,pos);}catch(err){} return; }
+  render();
+});
+document.addEventListener('keydown', e => {
+  if (ui.layer==='pin'){ if (/^\d$/.test(e.key)){ pressKey(e.key); e.preventDefault(); } else if (e.key==='Backspace'){ pressKey('⌫'); e.preventDefault(); } else if (e.key==='Escape'){ ui.layer=null; renderLayer(); } }
+  else if (e.key==='Escape' && ui.layer==='fund'){ ui.layer=null; renderLayer(); }
+});
+
+/* ---------- boot ---------- */
+S = load();
+S.tx.filter(x => x.status==='pending' && (x.nextCheck===Infinity || x.nextCheck==null)).forEach(x => x.nextCheck = Date.now()+2000);
+renderOutcomes();
+log('BOOT', `Ledger rebuilt from ${S.ledger.length} entries · wallet ${naira(round2(balance()))}`, 'ok');
+const pend = S.tx.filter(x=>x.status==='pending').length;
+if (pend) log('QUEUE', `${pend} pending transaction(s) resumed in requery queue`, 'warn');
+render();
+})();
+</script>
+
+</body></html>
